@@ -1,0 +1,11 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "main": "app.js",
+  "repository": "git@github.com:VenenoFSD/react-ssr.git",
+  "author": "VenenoFSD <venenofsd@qq.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.4"
+  }
+}
