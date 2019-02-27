@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "npm-run-all -p dev-**",
     "dev-start": "nodemon --watch build --exec node \"./build/bundle.js\"",
-    "dev-build": "webpack --config webpack.server.js --watch"
+    "dev-build-server": "webpack --config webpack.server.js --watch",
+    "dev-build-client": "webpack --config webpack.client.js --watch"
   },
   "dependencies": {
     "express": "^4.16.4",
@@ -23,6 +24,7 @@
     "npm-run-all": "^4.1.5",
     "webpack": "^4.29.5",
     "webpack-cli": "^3.2.3",
+    "webpack-merge": "^4.2.1",
     "webpack-node-externals": "^1.7.2"
   }
 }

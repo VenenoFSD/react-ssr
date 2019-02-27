@@ -1,10 +1,12 @@
 import express from 'express'
 import React from 'react'
 import { renderToString } from 'react-dom/server'
-import Home from './containers/Home'
+import Home from '../containers/Home'
 
 const app = express();
 const content = renderToString(<Home/>);
+
+app.use(express.static('public'));
 
 app.get('/', (req, res) => res.send(`
   <!DOCTYPE html>
@@ -13,8 +15,9 @@ app.get('/', (req, res) => res.send(`
       <title>ssr</title>
     </head>
     <body>
-      ${content}
+      <div id="root">${content}</div>
     </body>
+    <script src="/index.js"></script>
   </html>
 `));
 
