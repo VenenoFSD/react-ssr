@@ -5,7 +5,24 @@
   "repository": "git@github.com:VenenoFSD/react-ssr.git",
   "author": "VenenoFSD <venenofsd@qq.com>",
   "license": "MIT",
+  "scripts": {
+    "dev": "npm-run-all -p dev-**",
+    "dev-start": "nodemon --watch build --exec node \"./build/bundle.js\"",
+    "dev-build": "webpack --config webpack.server.js --watch"
+  },
   "dependencies": {
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "react": "^16.8.3",
+    "react-dom": "^16.8.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.3.4",
+    "@babel/preset-env": "^7.3.4",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.5",
+    "npm-run-all": "^4.1.5",
+    "webpack": "^4.29.5",
+    "webpack-cli": "^3.2.3",
+    "webpack-node-externals": "^1.7.2"
   }
 }

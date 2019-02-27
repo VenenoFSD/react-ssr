@@ -1,6 +1,21 @@
-const express = require('express');
-const app = express();
+import express from 'express'
+import React from 'react'
+import { renderToString } from 'react-dom/server'
+import Home from './containers/Home'
 
-app.get('/', (req, res) => res.send('Hello World!'));
+const app = express();
+const content = renderToString(<Home/>);
+
+app.get('/', (req, res) => res.send(`
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <title>ssr</title>
+    </head>
+    <body>
+      ${content}
+    </body>
+  </html>
+`));
 
 app.listen(3000, () => console.log('app listening on port 3000...'));
