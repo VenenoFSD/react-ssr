@@ -30,7 +30,17 @@ app.get('*', (req, res) => {
   });
 
   Promise.all(promises).then(() => {
-    res.send(render(req, store, routes));
+
+    // 定义 staticRouter 的 context
+    const context = {};
+    const html = render(req, store, routes, context);
+
+    // 如果进入 404 页面会改写 context
+    if (context.notFound) {
+      res.status(404);
+    }
+
+    res.send(html);
   });
 
 });

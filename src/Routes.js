@@ -2,6 +2,7 @@ import React from 'react'
 import App from './App'
 import Home from './containers/Home'
 import Animate from './containers/Animate'
+import NotFound from './containers/NotFound'
 
 export default [
   {
@@ -23,6 +24,10 @@ export default [
         exact: true,
         key: 'animate',
         loadData: Animate.loadData
+      },
+      {
+        component: NotFound,
+        key: 'notFound',
       }
     ]
   }
