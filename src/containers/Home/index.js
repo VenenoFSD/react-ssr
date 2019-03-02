@@ -1,19 +1,12 @@
 import React, { Component } from 'react'
-import Header from '../../components/Header'
 import { connect } from 'react-redux'
 import { actions } from './store'
 
 class Home extends Component {
 
-  getList () {
-    const { list } = this.props;
-    return list.map(item => <li key={ item.n }>{ item.k }</li>);
-  }
-
   render () {
     return (
       <div>
-        <Header/>
         <h2>Home</h2>
         <button onClick={ () => { alert('hello') } }>Click</button>
         <ul>{ this.getList() }</ul>
@@ -25,6 +18,11 @@ class Home extends Component {
     if (!this.props.list.length) { // 服务端已渲染则不必再请求
       this.props.getHomeList();
     }
+  }
+
+  getList () {
+    const { list } = this.props;
+    return list.map(item => <li key={ item.id }>{ item.content }</li>);
   }
 
 }

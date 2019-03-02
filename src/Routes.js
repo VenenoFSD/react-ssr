@@ -1,19 +1,29 @@
 import React from 'react'
+import App from './App'
 import Home from './containers/Home'
-import Login from './containers/Login'
+import Animate from './containers/Animate'
 
 export default [
   {
     path: '/',
-    component: Home,
-    exact: true,
-    key: 'Home',
-    loadData: Home.loadData
-  },
-  {
-    path: '/login',
-    component: Login,
-    exact: true,
-    key: 'login'
+    component: App,
+    key: 'App',
+    loadData: App.loadData,
+    routes: [
+      {
+        path: '/',
+        component: Home,
+        exact: true,
+        key: 'Home',
+        loadData: Home.loadData
+      },
+      {
+        path: '/animate',
+        component: Animate,
+        exact: true,
+        key: 'animate',
+        loadData: Animate.loadData
+      }
+    ]
   }
 ]

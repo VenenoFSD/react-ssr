@@ -1,4 +1,3 @@
-import axios from 'axios'
 import * as constants from './constants'
 
 const getChangeListAction = list => ({
@@ -7,9 +6,16 @@ const getChangeListAction = list => ({
 });
 
 export const getHomeList = () => {
-  return dispatch => {
-    return axios.get('http://localhost:1201/search/hot').then(({ data: { data: { hotkey } } }) => {
-      dispatch(getChangeListAction(hotkey));
+
+  // axios 请求 /api/hot
+  // 在浏览器端相当于请求 localhost:3000/api/host
+  // 在服务器端相当于请求 服务器根目录/api/hot
+  // 通过在创建 store 时传递不同的 axiosInstance 来实现
+
+  return (dispatch, getState, axiosInstance) => {
+    // 请求本地服务器
+    return axiosInstance.get('/list').then(({ data: { list } }) => {
+      dispatch(getChangeListAction(list));
     });
   }
 };

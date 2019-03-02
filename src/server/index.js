@@ -2,11 +2,19 @@ import express from 'express'
 import { render } from './util'
 import { matchRoutes } from 'react-router-config'
 import { getStore } from '../store'
-import routes from "../Routes";
+import routes from '../Routes'
+import proxy from 'express-http-proxy'
 
 const app = express();
 
 app.use(express.static('public'));
+
+// 请求代理转发
+app.use('/api', proxy('localhost:1201', {
+  proxyReqPathResolver: req => {
+    return req.url;
+  }
+}));
 
 app.get('*', (req, res) => {
 
