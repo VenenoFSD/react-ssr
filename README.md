@@ -30,7 +30,7 @@
 
 **SSR** 渲染如下图所示：
 
-![avatar](https://raw.githubusercontent.com/WarpPrism/Blog/master/imgs/tech_post/xqbl/4.png)
+![avatar](https://www.veneno.ink/wp-content/uploads/2019/03/1.png)
  
 ### webpack.server.js 核心代码
 
@@ -480,3 +480,191 @@ const App = () => (
   </Provider>
 );
 ```
+
+## node 当担中间层：代理转发客户端请求
+
+**React SSR** 整体结构如下图所示：
+
+![avatar](https://www.veneno.ink/wp-content/uploads/2019/03/1.jpg)
+
+**node** 在其中担任**中间层**的角色，如果客户端要向远程服务器发送请求，需要通过中间层进行代理转发
+
+### Node Server 代理转发
+
+在项目中使用了 `express-http-proxy` 来实现 **Node Server** 的代理转发。后端代码作如下修改：
+
+```javascript
+// /server/index.js
+// 省略未改动部分代码...
+
+import proxy from 'express-http-proxy'
+
+// 请求代理转发
+// 客户端请求本地服务器，即请求 localhost:3000/api/* 时
+// 代理转发到  localhost:1201/*
+app.use('/api', proxy('localhost:1201', {
+  proxyReqPathResolver: req => {
+    return req.url;
+  }
+}));
+
+// app.get('*', ...)
+```
+
+由于代理转发针对的只是客户端渲染，服务器端渲染依然请求远程服务器，所以要对客户端和服务器端分别进行 `axios` 配置
+
+服务器端：
+
+```javascript
+// /server/request.js
+
+import axios from 'axios'
+
+const instance = axios.create({
+  baseURL: 'http://localhost:1201'
+});
+
+export default instance
+```
+
+客户端：
+
+```javascript
+// /client/request.js
+
+import axios from 'axios'
+
+const instance = axios.create({
+  baseURL: '/'
+});
+
+export default instance
+```
+
+配置好 `axios instance` 后通过 `redux-thunk` 的 `withExtraArgument` 传递给 `actions.js` ：
+
+```javascript
+// /store/index.js
+// 省略未改动部分代码...
+
+import clientAxios from '/client/request'
+import serverAxios from '/server/request'
+
+// 通过 thunk.withExtraArgument 传递 axios 配置
+export const getStore = () => createStore(reducer, applyMiddleware(thunk.withExtraArgument(serverAxios)));
+
+export const getClientStore = () => {
+  const defaultState = window.context.state;
+  return createStore(reducer, defaultState, applyMiddleware(thunk.withExtraArgument(clientAxios)));
+};
+```
+
+`action` 会在第三个参数拿到 `axiosInstance`：
+
+```javascript
+// /containers/Home/store/actions.js
+// 省略未改动部分代码...
+
+export const getHomeList = () => {
+  return (dispatch, getState, axiosInstance) => {
+    return axiosInstance.get('/list').then(({ data: { list } }) => {
+      dispatch(getChangeListAction(list));
+    });
+  }
+};
+```
+
+### renderRoutes 实现多级路由
+
+`react-router-config` 提供了 `renderRoutes` api 来实现多级路由
+
+- 项目结构调整：根目录 `App.js` 作为根组件，配置 `routes` ：
+
+```javascript
+// /Routes.js
+
+export default [
+  {
+    // App 组件一定会渲染
+    path: '/',
+    loadData: App.loadData,
+    routes: [
+      {
+        path: '/',
+        component: Home,
+        exact: true,
+        key: 'Home',
+        loadData: Home.loadData
+      },
+      {
+        path: '/animate',
+        component: Animate,
+        exact: true,
+        key: 'animate',
+        loadData: Animate.loadData
+      }
+    ]
+  }
+]
+```
+
+- `App.js` 使用 `renderRoutes` 渲染**二级路由**
+
+```jsx harmony
+// /App.js
+
+import React from 'react'
+import Header from '/components/Header'
+import { renderRoutes } from 'react-router-config'
+import { actions } from '/components/Header/store'
+
+// route 会通过 props 传递
+// props.route.routes：此处要渲染的是二级路由
+const App = props => {
+  return (
+    <div>
+      <Header/>
+      { renderRoutes(props.route.routes) }
+    </div>
+  )
+};
+
+export default App
+```
+
+- 由于 `routes` 不再是一个简单的数组，在服务器端和客户端不能简单的通过 `map` 来循环，而是使用 `renderRoutes`
+
+服务器端：（客户端改动与服务器端一致）
+
+```jsx harmony
+// /server/util.js
+// 省略未改动部分代码...
+
+import { renderRoutes } from 'react-router-config'
+
+export const render = (req, store, routes) => {
+  const content = renderToString((
+    <Provider store={ store }>
+      <StaticRouter context={{}} location={ req.path }>
+        <div>{ renderRoutes(routes) }</div>
+      </StaticRouter>
+    </Provider>
+  ));
+};
+```
+
+### 引入登录模块
+
+- 打开网页时网页就自动发送请求检查登录状态，这步操作需要在服务器端渲染时完成；而登录，退出登录则由客户端来完成。
+
+```javascript
+// /App.js
+// 省略未改动部分代码...
+
+// 获取登录状态只需要在服务器端完成
+App.loadData = store => {
+  return store.dispatch(actions.getLoginStatus());
+};
+```
+
+- 客户端执行登录，退出登录操作较为简单，此处不再赘述
