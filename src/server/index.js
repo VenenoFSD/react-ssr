@@ -45,7 +45,9 @@ app.get('*', (req, res) => {
   Promise.all(promises).then(() => {
 
     // 定义 staticRouter 的 context
-    const context = {};
+    const context = {
+      css: [] // 用于多组件样式整合
+    };
     const html = render(req, store, routes, context);
 
     if (context.notFound) { // 如果进入 404 页面会改写 context

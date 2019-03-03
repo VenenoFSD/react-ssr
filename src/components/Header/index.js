@@ -2,13 +2,14 @@ import React, { Component, Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { connect } from 'react-redux'
 import { actions } from './store'
+import styles from './style.css'
+import withStyle from '../../withStyle'
 
 class Header extends Component {
-
-  render() {
+  render () {
     const { login, handleLogin, handleLogout } = this.props;
     return (
-      <div>
+      <div className={ styles.header }>
         <Link to='/'>Home </Link>
         {
           login ?
@@ -22,7 +23,6 @@ class Header extends Component {
       </div>
     )
   }
-
 }
 
 const mapStateToProps = state => ({
@@ -37,4 +37,4 @@ const mapDispatchToProps = dispatch => ({
   }
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(Header)
+export default connect(mapStateToProps, mapDispatchToProps)(withStyle(Header, styles))

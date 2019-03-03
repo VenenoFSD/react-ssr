@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { actions } from './store'
 import styles from './style.css'
+import withStyle from '../../withStyle'
 
 class Home extends Component {
 
@@ -22,23 +23,12 @@ class Home extends Component {
     }
   }
 
-  componentWillMount () {
-    //  服务器端渲染时
-    this.props.staticContext && (this.props.staticContext.css = styles._getCss());
-  }
-
   getList () {
     const { list } = this.props;
     return list.map(item => <li key={ item.id }>{ item.content }</li>);
   }
 
 }
-
-// 通过 Router 配置，服务端渲染前会先调用此方法
-// 可通过此方法异步获取数据
-Home.loadData = store => {
-  return store.dispatch(actions.getHomeList());
-};
 
 const mapStateToProps = state => ({
   list: state.home.singerList
@@ -49,4 +39,13 @@ const mapDispatchToProps = dispatch => ({
   }
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(Home)
+const ExportHome = connect(mapStateToProps, mapDispatchToProps)(withStyle(Home, styles));
+
+// 通过 Router 配置，服务端渲染前会先调用此方法
+// 可通过此方法异步获取数据
+// 由于 Home 组件会传入 connect 方法返回新组件，为安全起见，将 loadData 挂载到新生成的组件
+ExportHome.loadData = store => {
+  return store.dispatch(actions.getHomeList());
+};
+
+export default ExportHome

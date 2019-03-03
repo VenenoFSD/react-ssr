@@ -13,7 +13,7 @@ export const render = (req, store, routes, context) => {
     </Provider>
   ));
 
-  const cssStr = context.css ? context.css : '';
+  const cssStr = context.css.length ? context.css.join('') : '';
 
   return `
     <!DOCTYPE html>

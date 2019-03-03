@@ -29,10 +29,6 @@ class Animate extends Component {
 
 }
 
-Animate.loadData = store => {
-  return store.dispatch(actions.getAnimateList());
-};
-
 const mapStateToProps = state => ({
   list: state.animate.animateList,
   login: state.header.login
@@ -43,4 +39,10 @@ const mapDispatchToProps = dispatch => ({
   }
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(Animate)
+const ExportAnimate = connect(mapStateToProps, mapDispatchToProps)(Animate);
+
+ExportAnimate.loadData = store => {
+  return store.dispatch(actions.getAnimateList());
+};
+
+export default ExportAnimate

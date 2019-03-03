@@ -8,7 +8,8 @@ import { actions } from './components/Header/store'
 const App = props => {
   return (
     <div>
-      <Header/>
+      {/* Header 无法直接获取 staticContext，需要传递 */}
+      <Header staticContext={ props.staticContext }/>
       { renderRoutes(props.route.routes) }
     </div>
   )
