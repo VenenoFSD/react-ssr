@@ -1,17 +1,16 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { actions } from './store'
-import styles from './style.css'
+import styles from '../common.css'
 import withStyle from '../../withStyle'
 
 class Home extends Component {
 
   render () {
     return (
-      <div>
+      <div className={ styles.page }>
         {/* css 模块化，可按此形式引入 */}
-        <h2 className={ styles.test }>Home</h2>
-        <button onClick={ () => { alert('hello') } }>Click</button>
+        <h2 className={ styles.title }>动画视频排行</h2>
         <ul>{ this.getList() }</ul>
       </div>
     )
@@ -25,7 +24,7 @@ class Home extends Component {
 
   getList () {
     const { list } = this.props;
-    return list.map(item => <li key={ item.id }>{ item.content }</li>);
+    return list.map(item => <li key={ item.id } className={ styles.item }>{ item.content }</li>);
   }
 
 }

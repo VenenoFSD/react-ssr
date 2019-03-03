@@ -3,6 +3,8 @@ import React from 'react'
 import Header from './components/Header'
 import { renderRoutes } from 'react-router-config'
 import { actions } from './components/Header/store'
+import styles from './base.css'
+import withStyles from './withStyle'
 
 // routes 通过 props.route 传递
 const App = props => {
@@ -20,4 +22,4 @@ App.loadData = store => {
   return store.dispatch(actions.getLoginStatus());
 };
 
-export default App
+export default withStyles(App, styles)

@@ -1,12 +1,14 @@
 import React, { Component } from 'react'
+import styles from './style.css'
+import withStyles from '../../withStyle'
 
 class NotFound extends Component {
 
   render () {
     return (
-      <div>
+      <div className={ styles.page }>
         <h2>404</h2>
-        <p>page not found</p>
+        <p className={ styles.text }>page not found !!!</p>
       </div>
     );
   }
@@ -20,4 +22,4 @@ class NotFound extends Component {
 
 }
 
-export default NotFound
+export default withStyles(NotFound, styles)

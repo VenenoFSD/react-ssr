@@ -1,3 +1,25 @@
 .header {
-  background-color: #ddd;
+  height: 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 3px 5px rgba(0,0,0,.1);
+  padding: 0 40px;
+}
+.header .nav {
+  color: deepskyblue;
+  font-size: 18px;
+  margin-right: 50px;
+  padding-bottom: 4px;
+}
+.header .nav:hover {
+  border-bottom: 1px solid deepskyblue;
+}
+.header .btn {
+  font-size: 14px;
+  color: #777;
+  cursor: pointer;
+}
+.header .btn:hover {
+  color: #000;
 }

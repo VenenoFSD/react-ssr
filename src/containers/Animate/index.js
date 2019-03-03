@@ -2,14 +2,16 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { actions } from './store'
 import { Redirect } from 'react-router-dom'
+import styles from '../common.css'
+import withStyle from '../../withStyle'
 
 class Animate extends Component {
 
   render () {
     return this.props.login ? (
-      <div>
-        <h2>Animate</h2>
-        { this.getList() }
+      <div className={ styles.page }>
+        <h2 className={ styles.title }>番剧列表</h2>
+        <ul>{ this.getList() }</ul>
       </div>
     ) : (
       <Redirect to='/'/>
@@ -24,7 +26,7 @@ class Animate extends Component {
 
   getList () {
     const { list } = this.props;
-    return list.map(item => <li key={ item.id }>{ item.title }</li>);
+    return list.map(item => <li key={ item.id } className={ styles.item }>{ item.title }</li>);
   }
 
 }
@@ -39,7 +41,7 @@ const mapDispatchToProps = dispatch => ({
   }
 });
 
-const ExportAnimate = connect(mapStateToProps, mapDispatchToProps)(Animate);
+const ExportAnimate = connect(mapStateToProps, mapDispatchToProps)(withStyle(Animate, styles));
 
 ExportAnimate.loadData = store => {
   return store.dispatch(actions.getAnimateList());
