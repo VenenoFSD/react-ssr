@@ -25,7 +25,20 @@ app.get('*', (req, res) => {
   // matchedRoutes 中的组件的 loadData 都要执行一次
   matchedRoutes.forEach(item => {
     if (item.route.loadData) {
-      promises.push(item.route.loadData(store));
+
+      /* 数据请求失败 Promise 处理（容错处理）
+      * item.route.loadData(store) 是对应一个个组件的 Promise 对象
+      * 若其中部分组件数据请求失败或请求过慢，会触发其 catch 或处于 pending 状态
+      * 此时加载错误的 Promise 会走 Promise.all.catch
+      * 为了使所有 Promise（无论成功与否）都走 Promise.all.then
+      * 将 item.route.loadData(store) 再包成一个 Promise
+      * 无论 item.route.loadData(store) 触发 then 或 catch 都 resolve（外部 promise 永远是成功的）
+      * */
+      const promise = new Promise(resolve => {
+        item.route.loadData(store).then(resolve).catch(resolve);
+      });
+
+      promises.push(promise);
     }
   });
 
@@ -35,17 +48,15 @@ app.get('*', (req, res) => {
     const context = {};
     const html = render(req, store, routes, context);
 
-    // 如果进入 404 页面会改写 context
-    if (context.notFound) {
+    if (context.notFound) { // 如果进入 404 页面会改写 context
       res.status(404);
-    }
-
-    // 页面重定向时改写状态码
-    if (context.action === 'REPLACE') {
+      res.send(html);
+    } else if (context.action === 'REPLACE') { // 页面重定向时改写状态码
       res.redirect(301, context.url);
+    } else { // 200
+      res.send(html);
     }
 
-    res.send(html);
   });
 
 });
