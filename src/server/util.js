@@ -13,18 +13,21 @@ export const render = (req, store, routes, context) => {
     </Provider>
   ));
 
+  const cssStr = context.css ? context.css : '';
+
   return `
     <!DOCTYPE html>
     <html lang="en">
       <head>
         <title>ssr</title>
+        <style>${ cssStr }</style>
       </head>
       <body>
-        <div id="root">${content}</div>
+        <div id="root">${ content }</div>
       </body>
       <script>
         window.context = {
-          state: ${JSON.stringify(store.getState())}
+          state: ${ JSON.stringify(store.getState()) }
         }
       </script>
       <script src="/index.js"></script>

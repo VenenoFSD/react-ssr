@@ -1,13 +1,15 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { actions } from './store'
+import styles from './style.css'
 
 class Home extends Component {
 
   render () {
     return (
       <div>
-        <h2>Home</h2>
+        {/* css 模块化，可按此形式引入 */}
+        <h2 className={ styles.test }>Home</h2>
         <button onClick={ () => { alert('hello') } }>Click</button>
         <ul>{ this.getList() }</ul>
       </div>
@@ -18,6 +20,11 @@ class Home extends Component {
     if (!this.props.list.length) { // 服务端已渲染则不必再请求
       this.props.getHomeList();
     }
+  }
+
+  componentWillMount () {
+    //  服务器端渲染时
+    this.props.staticContext && (this.props.staticContext.css = styles._getCss());
   }
 
   getList () {
