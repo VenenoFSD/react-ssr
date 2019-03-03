@@ -40,6 +40,11 @@ app.get('*', (req, res) => {
       res.status(404);
     }
 
+    // 页面重定向时改写状态码
+    if (context.action === 'REPLACE') {
+      res.redirect(context.url, 301);
+    }
+
     res.send(html);
   });
 
