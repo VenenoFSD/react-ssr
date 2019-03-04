@@ -17,9 +17,11 @@ const App = props => {
   )
 };
 
+const ExportApp = withStyles(App, styles);
+
 // 获取登录状态只需要在服务器端完成
-App.loadData = store => {
+ExportApp.loadData = store => {
   return store.dispatch(actions.getLoginStatus());
 };
 
-export default withStyles(App, styles)
+export default ExportApp

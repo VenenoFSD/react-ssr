@@ -1,6 +1,7 @@
-import React, { Component } from 'react'
+import React, { Component, Fragment } from 'react'
 import { connect } from 'react-redux'
 import { actions } from './store'
+import { Helmet } from 'react-helmet'
 import styles from '../common.css'
 import withStyle from '../../withStyle'
 
@@ -8,11 +9,17 @@ class Home extends Component {
 
   render () {
     return (
-      <div className={ styles.page }>
-        {/* css 模块化，可按此形式引入 */}
-        <h2 className={ styles.title }>动画视频排行</h2>
-        <ul>{ this.getList() }</ul>
-      </div>
+      <Fragment>
+        <Helmet>
+          <title>SSR首页 - 动画视频排行</title>
+          <meta name="description" content="SSR首页 - 动画视频排行"/>
+        </Helmet>
+        <div className={ styles.page }>
+          {/* css 模块化，可按此形式引入 */}
+          <h2 className={ styles.title }>动画视频排行</h2>
+          <ul>{ this.getList() }</ul>
+        </div>
+      </Fragment>
     )
   }
 

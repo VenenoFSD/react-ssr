@@ -10,6 +10,10 @@
 }
 .page .item {
   font-size: 14px;
-  color: #777;
+  color: #888;
   padding: 5px 0;
+  cursor: pointer;
+}
+.page .item:hover {
+  color: #000;
 }
