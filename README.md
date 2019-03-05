@@ -20,13 +20,13 @@
 
 1. 打包服务器端代码到 `/build/bundle.js` （实时监听文件变化）
 2. 打包客户端代码到 `/public/index.js` （实时监听文件变化）
-3. 服务器端执行 `/build/bundle.js`。用户访问时，服务器端返回一个 `html` ，`html` 的 `script` 标签引入了 `/public/index.js` ，因此在浏览器会执行 `index.js`。
+3. 服务器端执行 `/build/bundle.js`。用户访问时，服务器端返回一个 `html` ，`html` 的 `script` 标签引入了 `/public/index.js` ，因此在浏览器会执行 `index.js`
 
 ### 同构
 
-如果页面只在服务器端渲染，由于服务器返回的是 **字符串** ,因此DOM元素绑定的事件不会生效，需要在客户端再执行一次代码。
+如果页面只在服务器端渲染，由于服务器返回的是 **字符串** ,因此DOM元素绑定的事件不会生效，需要在客户端再执行一次代码
 
-同构指的是把页面的展示内容和交互写在一起，让代码执行两次。在服务器端执行一次，用于实现服务器端渲染，在客户端再执行一次，用于接管页面交互。
+同构指的是把页面的展示内容和交互写在一起，让代码执行两次。在服务器端执行一次，用于实现服务器端渲染，在客户端再执行一次，用于接管页面交互
 
 **SSR** 渲染如下图所示：
 
@@ -655,7 +655,7 @@ export const render = (req, store, routes) => {
 
 ### 引入登录模块
 
-- 打开网页时网页就自动发送请求检查登录状态，这步操作需要在服务器端渲染时完成；而登录，退出登录则由客户端来完成。
+- 打开网页时网页就自动发送请求检查登录状态，这步操作需要在服务器端渲染时完成；而登录，退出登录则由客户端来完成
 
 ```javascript
 // /App.js
@@ -668,3 +668,335 @@ App.loadData = store => {
 ```
 
 - 客户端执行登录，退出登录操作较为简单，此处不再赘述
+
+## 404页面
+
+当用户访问不存在的页面时返回 `404` 页面，其中的重点在于 `404` 状态码
+
+- 首先进行路由配置：
+
+```javascript
+// /Routes.js
+// 省略未改动部分代码...
+
+import NotFound from '/containers/NotFound'
+
+export default [
+  {
+    path: '/',
+    // ....
+    routes: [
+      // 其他页面 ...
+      {
+        component: NotFound,
+        key: 'notFound'
+      }
+    ]
+  }
+]
+```
+
+- 如何在服务器端得知用户进入了 `404` 页面：由于 `staticContext` 会传递给 `NotFound` 组件，所以可以在服务器端渲染的时候给 `context` 对象添加属性来标识
+
+在 `NotFound` 组件中：
+
+```jsx harmony
+// /containers/NotFound/index.js
+
+import React, { Component } from 'react'
+
+class NotFound extends Component {
+
+  render () {
+    return (
+      <div>
+        <h2>404</h2>
+        <p>page not found</p>
+      </div>
+    );
+  }
+
+  componentWillMount () {
+    // 只有服务器端会传递 context
+    // 所以只在服务器端渲染时修改 context
+    // context 添加属性 notFound
+    let { staticContext } = this.props;
+    staticContext && (staticContext.notFound = true);
+  }
+
+}
+
+export default NotFound
+```
+
+- 改写服务器端代码：
+
+```javascript
+// /server/index.js
+// 省略未改动部分代码...
+
+Promise.all(promises).then(() => {
+
+  // 定义 staticRouter 的 context
+  const context = {};
+  const html = render(req, store, routes, context);
+
+  // 如果进入 404 页面会改写 context
+  if (context.notFound) {
+    // 设置 404 状态码
+    res.status(404);
+  }
+
+  res.send(html);
+});
+```
+
+## 服务器端 301 重定向
+
+如果用户在未登录情况下访问需要登录才能访问的页面，那么会自动重定向到首页，并返回 `301` 状态码
+
+实现服务器端 `301` 重定向比较简单，当组件中使用 `<Redirect />` 重定向时，`context.action` 的值为 `REPLACE` ，可直接用来判断：
+
+改写服务器端代码：
+
+```javascript
+// /server/index.js
+// 省略未改动部分代码...
+
+Promise.all(promises).then(() => {
+  // ...
+  // 301 重定向
+  if (context.action === 'REPLACE') {
+    res.redirect(301, context.url);
+  }
+  // ...
+});
+```
+
+## 数据请求失败时 promise 处理
+
+在之前异步请求数据的处理中，我们将所有异步请求的 `promise` `push` 到一个数组，等待所有 `promise` 执行完成后再渲染。这里面没有考虑到数据请求失败的情况
+
+如果有多个组件需要请求数据再渲染，若其中一个数据请求失败，会阻塞其他组件的渲染。为了更好的用户体验，数据请求成功的组件都应该被渲染出来，因此对异步请求 `promise` 做以下处理：
+
+```javascript
+// /server/index.js
+// 省略未改动部分代码...
+
+matchedRoutes.forEach(item => {
+  if (item.route.loadData) {
+    
+    // promises.push(item.route.loadData(store));
+
+    /* 数据请求失败 Promise 处理（容错处理）
+    * item.route.loadData(store) 是对应一个个组件的 Promise 对象
+    * 若其中部分组件数据请求失败或请求过慢，会触发其 catch 或处于 pending 状态
+    * 此时加载错误的 Promise 会走 Promise.all.catch
+    * 为了使所有 Promise（无论成功与否）都走 Promise.all.then
+    * 将 item.route.loadData(store) 再包成一个 Promise
+    * 无论 item.route.loadData(store) 触发 then 或 catch 都 resolve（外部 promise 永远是成功的）
+    * */
+    const promise = new Promise(resolve => {
+      item.route.loadData(store).then(resolve).catch(resolve);
+    });
+
+    promises.push(promise);
+  }
+});
+```
+
+将异步请求 `promise` 再包一层 `promise` ，让其无论数据请求成功（执行 `then`）还是失败（执行 `catch`）都 `resolve` ，这样都会走 `Promise.all.then` 方法，那些请求成功的就都被渲染出来
+
+## 服务器端渲染 css
+
+服务器端渲染 `css` 时有一个注意点，使用 `style-loader` 时会提示找不到 `window` 对象，因此我们使用 `isomorphic-style-loader` 来代替 `style-loader`：
+
+```js
+yarn add style-loader css-loader isomorphic-style-loader --dev
+```
+
+- `webpack` 配置
+
+```javascript
+// webpack.client.js
+// 省略未改动部分代码...
+
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.css?$/,
+        use: ['style-loader', // webpack.server.js 中用 isomorphic-style-loader 代替
+          {
+            loader: 'css-loader',
+            options: {
+              importLoaders: 1,
+              modules: true,
+              localIdentName: '[name]_[local]_[hash:base64:5]'
+            }
+          }]
+      }
+    ]
+  }
+}
+```
+
+要实现服务器端渲染 `css` ，就需要获取所有样式并将其插入到服务器端返回的 `html` 中
+
+在 `webpack` 配置 `modules: true` 使得我们可以模块化引入样式，并且可以通过 `_getCss()` 来获取引入的样式。将获取到的样式存入 `context` ，就可以在服务器端拿到样式了
+
+`Home` 组件：
+
+```jsx harmony
+// /containers/Home/index.js
+// 省略未改动部分代码...
+
+import styles from './style.css'
+
+class Home extends Component {
+
+  render () {
+    return (
+      <div>
+        <h2>Home</h2>
+        {/* css 模块化，可按此形式引入 */}
+        <h2 className={ styles.test }>Home</h2>
+      </div>
+    )
+  }
+
+  componentWillMount () {
+    // 服务器端渲染时
+    // 获取引入的样式存入 context
+    this.props.staticContext && (this.props.staticContext.css = styles._getCss());
+  }
+  
+  // ...
+  
+}
+```
+
+服务器端渲染：
+
+```js
+// /server/util.js
+// 省略未改动部分代码...
+
+export const render = (req, store, routes, context) => {
+  
+  //...
+  
+  const cssStr = context.css ? context.css : '';
+  
+  return `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <title>ssr</title>
+          <style>${ cssStr }</style>
+        </head>
+      // ...      
+  `      
+  
+}
+```
+
+## 高阶组件处理多组件样式整合
+
+从上文可以发现，服务器端渲染 `css` 的时候，每个组件都要在 `ComponentWillMount` 执行相同的操作，为了把这部分抽离出来，可以使用**高阶组件**来解决
+
+定义一个高阶组件：
+
+```jsx harmony
+// /WithStyle.js
+// 函数返回一个高阶组件
+// 具备公共特性
+
+import React, { Component } from 'react'
+
+export default (DecoratedComponent, styles) => {
+  return class newComponent extends Component {
+
+    render () {
+      return <DecoratedComponent { ...this.props }/>
+    }
+
+    componentWillMount () {
+      // 服务器端渲染时
+      // 当多个组件同时需要改写 context.css 进行服务器端渲染 css 时，回导致后写入覆盖前面的
+      // 因此将 context.css 改为数组 push
+      this.props.staticContext && (this.props.staticContext.css.push(styles._getCss()));
+    }
+  }
+}
+```
+
+之后在每个需要的组件中引入，例如 `Home` 组件：
+
+```jsx harmony
+// /containers/Home/index.js
+// 省略未改动部分代码...
+
+import styles from './style.css'
+import withStyle from '/withStyle'
+
+class Home extends Component {
+  // ...
+}
+
+export default withStyle(Home, styles)
+```
+
+## 使用 react-helmet 设置 title 和 description
+
+不同的页面需要展示不同的 `title` 和 `description` ，可以使用 `react-helmet` 快速地解决。以 `Home` 组件为例：
+
+```jsx harmony
+// /containers/Home/index.js
+// 省略未改动部分代码...
+
+import React, { Component, Fragment } from 'react'
+import { Helmet } from 'react-helmet'
+
+class Home extends Component {
+  render () {
+    return (
+      <Fragment>
+        <Helmet>
+          <title>SSR首页 - 动画视频排行</title>
+          <meta name="description" content="SSR首页 - 动画视频排行"/>
+        </Helmet>
+        {/* ... */}
+      </Fragment>
+    )
+  }
+}
+```
+
+在服务器端：
+
+```javascript
+// /server/util.js
+// 省略未改动部分代码...
+
+import { Helmet } from 'react-helmet'
+
+export const render = (req, store, routes, context) => {
+  
+  // const content = renderToString...
+  const helmet = Helmet.renderStatic();
+  const cssStr = context.css.length ? context.css.join('') : '';
+  
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <title>ssr</title>
+        ${ helmet.title.toString() }
+        ${ helmet.meta.toString() }
+        <style>${ cssStr }</style>
+      </head>
+      // ...
+  `    
+}
+```
