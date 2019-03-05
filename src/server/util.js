@@ -14,7 +14,6 @@ export const render = (req, store, routes, context) => {
     </Provider>
   ));
   const helmet = Helmet.renderStatic();
-
   const cssStr = context.css.length ? context.css.join('') : '';
 
   return `

@@ -8,14 +8,14 @@ export default [
   {
     path: '/',
     component: App,
-    key: 'App',
+    key: 'app',
     loadData: App.loadData,
     routes: [
       {
         path: '/',
         component: Home,
         exact: true,
-        key: 'Home',
+        key: 'home',
         loadData: Home.loadData
       },
       {
@@ -27,7 +27,7 @@ export default [
       },
       {
         component: NotFound,
-        key: 'notFound',
+        key: 'notFound'
       }
     ]
   }
